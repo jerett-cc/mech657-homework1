@@ -13,7 +13,7 @@ using namespace std;
 
 
 /*Outline of steps:
- *
+ * step1)
  *
  *
  */
