@@ -6,7 +6,9 @@
 // Description : Generate reference solutions to two problems.
 //============================================================================
 
+#include <cctype>
 #include <iostream>
+#include <math.h>
 #include <vector>
 #include <cmath>
 #include <functional>
@@ -14,7 +16,7 @@
 #include <stdio.h>
 #include <cassert>
 
-#define TOL = 1e-16;
+#define TOL 1e-16
 
 using namespace std;
 
@@ -34,11 +36,12 @@ using namespace std;
 
 struct problemData {
 
-	double S_star, gamma, temp, pressure, T_01, P_01, R;
+
+	double S_star, gamma, T_01, P_01, R;
 	vector<double> M, S, X;
 	int mesh_size;
 
-	problemData(vector<double> x, double s_star, double gamm, double t_01, double p_01, double r, int meshSize){
+	problemData(vector<double> s, vector<double> x, double s_star, double gamm, double t_01, double p_01, double r, int meshSize){
 		T_01 = t_01;
 		P_01 = p_01;
 		X = x;
@@ -47,9 +50,8 @@ struct problemData {
 		M = x;
 		R = r;
 		mesh_size = meshSize;
+        S = s;
 	}
-
-
 };
 
 vector<double> S1(vector<double> x){
@@ -73,34 +75,39 @@ vector<double> S1(vector<double> x){
 }
 
 //make proper return type
-double f(problemData data, double M, int index){
+double f1(problemData &data, double M, int index){
+	
+	//cout << "M in f:" << M << endl;
 	double inside = 2/(data.gamma + 1) * (1 + (data.gamma - 1)/2*pow(M,2));
 	double exponent = (data.gamma + 1)/(2*(data.gamma - 1));
 	double val = 1/M*pow(inside,exponent) - data.S[index]/data.S_star;
+	//cout << "f = " << val << "\n";
 
 	return val;
 
 }
 
-double fprime(problemData data, double M, int index){
+double f1prime(problemData &data, double M, int index){
 
-	double inside = 2/(data.gamma + 1) * (1 + (data.gamma - 1)/2*pow(M, 2));
+	double inside = 2/(data.gamma + 1) * (1 + (((data.gamma - 1)/2)*pow(M, 2)));
 	double exponent = (data.gamma + 1)/(2*(data.gamma - 1));
-
-	double val = -1/pow(M,2)*pow(inside, exponent) + 1/M*exponent*pow(inside, exponent - 1);
+	
+	double val = -1/pow(M,2)*pow(inside, exponent) + 2*pow(inside, exponent - 1);
 
 	return val;
-
 }
 
 
-
-double newtonSolve1(problemData data, double guess, int index){
-
-	while(f(data, guess, index)> 1e-16){
-
-		guess = guess + f(data, guess, index)/fprime(data, guess, index);
-
+double newtonSolve1(problemData &data, double guess, int index){
+//something is wrong here... seems like the solution it gives for every xval is too close. expecting a range 0.2-0.55
+//
+	double f = 0;
+	for(int i = 0; i<10; ++i){
+		cout << "Guess sent to f " << guess << " at position " << index <<  endl;
+		//data.M[index] = guess;
+		guess = guess - f1(data, guess, index)/f1prime(data, guess, index);
+		f = f1(data, guess, index);
+		cout << "value of f = " << f << endl;
 	}
 
 	return guess;
@@ -120,21 +127,18 @@ void printResults(problemData data, string a_file_name){
 	a_file.open(a_file_name, std::ios::out | std::ios::trunc);
 
 
-
-	for (int i = 0; i< data.mesh_size; ++i)
+	for (int i = 0; i< data.mesh_size+1; ++i)
 	{
-		a_file <<  " " << data.X[i]  << "   " << std::to_string(data.M[i]) << std::endl;
+		a_file <<  " " << data.X[i]  << ", " << std::to_string(data.M[i]) << std::endl;
 	}
 	a_file.close();
 }
-
-
 
 int main() {
 
 	//generate the x vector we will use for this problem
 
-	int meshSize = 3000;
+	int meshSize = 5;
 	double start = 0.;
 	double end = 10.;
 
@@ -146,36 +150,50 @@ int main() {
 	double totalTemp = 300.;
 	double inletPressure = 100.;
 	double s_star = 0.8;
+    	
 
-
-	vector<double> S(meshSize);//used for newton method
-	vector<double> mesh(meshSize);
+	vector<double> mesh(meshSize+1);
+	vector<double> solution(mesh.size());
 
 	//fill the vector mesh with explicit points
-	for(int i=0; i < meshSize; ++i){
-		S[i] = 0;
+	for(int i=0; i < meshSize+1; ++i){
 		mesh[i] = start + dx*i;
 	}
+	assert(mesh[end] = 10);
 
 
+	vector<double> S = S1(mesh);
+	assert(fabs(S[meshSize]-1.5)<TOL);
 
-	cout << mesh[0] << " " << mesh[1500] << " " << mesh[meshSize-1] << "\n";
+	//cout << mesh[0] << " " << mesh[1500] << " " << mesh[meshSize-1] << "\n";
 
-	problemData data1(mesh, s_star, gamma, totalTemp, inletPressure, R, meshSize);
-	data1.S = S1(data1.X);
+	problemData data1(S, mesh, s_star, gamma, totalTemp, inletPressure, R, meshSize);
+	problemData* dataPtr = &data1;
 
-	double initial_guess = 0.;
+	double initial_guess = 0.5;
 
-	for(int i = 0; i < meshSize; ++i){
-
-		data1.M[i] = newtonSolve1(data1, initial_guess, i);
-
-		initial_guess = data1.M[i];
-
+	//loop through all points and generate the solution with 
+	for(int i = 0; i < meshSize+1; ++i){
+		cout << "M before: " << data1.M[i] << endl;
+		solution[i] = newtonSolve1(data1, initial_guess, i);
+		cout << "M after: " << data1.M[i] << "\n";
+		initial_guess = solution[i];
 	}
 
-	//printResults(data1, "problem1_results.txt");
+	data1.M = solution;
+	assert((data1.M[3] - solution[3])< TOL);
 
+	printResults(data1, "problem1_results.txt");
+	
+	std::ofstream a_file;
+          a_file.open("problem1 S vec.txt", std::ios::out | std::ios::trunc);
+  
+  
+          for (int i = 0; i< data1.mesh_size+1; ++i)
+          {
+                  a_file <<  " " << data1.X[i]  << "   " << std::to_string(data1.S[i]) << std::endl;
+          }
+          a_file.close();
 
 	return 0;
 }
