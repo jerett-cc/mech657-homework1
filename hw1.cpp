@@ -93,35 +93,40 @@ double f1(problemData &data, double M, int index){
 }
 
 double f1prime(problemData &data, double M, int index){
+	double a = 2/(data.gamma + 1);
+	double b = 1 + (data.gamma - 1)/2*pow(M,2);
+	double c = (data.gamma +1)/(2*(data.gamma -1));
 
-	double inside = 2/(data.gamma + 1) * (1 + (((data.gamma - 1)/2)*pow(M, 2)));
-	double exponent = (data.gamma + 1)/(2*(data.gamma - 1));
+	double inside = a*b;
 	
-	double val = -1/pow(M,2)*pow(inside, exponent) + 2*pow(inside, exponent - 1);
+	double val = -1/pow(M,2)*pow(inside, c) + 2*pow(inside, c - 1);
 
 	return val;
 }
 
 
-double newtonSolve1(problemData &data, double guess, int index){
-//something is wrong here... seems like the solution it gives for every xval is too close. expecting a range 0.2-0.55
+double newtonSolve1(problemData &data, double guess, const int index){
+
 //
 	double f = 1;
-//	while(!(fabs(f - 0)<TOL)){
-//		//cout << "Guess sent to f " << guess << " at position " << index <<  endl;
-//		//data.M[index] = guess;
-//		guess = guess - f1(data, guess, index)/f1prime(data, guess, index);
-//		f = f1(data, guess, index);
-//		//cout << "value of f = " << f << endl;
-//	}
+	int max_it = 100;
+	int it = 1;
+	while(!(fabs(f - 0)<TOL) && it < max_it){
+		//cout << "Guess sent to f " << guess << " at position " << index <<  endl;
+		//data.M[index] = guess;
+		guess = guess - f1(data, guess, index)/f1prime(data, guess, index);
+		f = f1(data, guess, index);
+		cout << "position" << index << "failed to converge" << endl;
+		++it;
+	}
 
-	for(int i = 0; i < 100; ++i){
+	//for(int i = 0; i < 1000; ++i){
 			//cout << "Guess sent to f " << guess << " at position " << index <<  endl;
 			//data.M[index] = guess;
-			guess = guess - f1(data, guess, index)/f1prime(data, guess, index);
-			f = f1(data, guess, index);
+	//		guess = guess - f1(data, guess, index)/f1prime(data, guess, index);
+	//		f = f1(data, guess, index);
 			//cout << "value of f = " << f << endl;
-		}
+	//	}
 
 	return guess;
 
@@ -131,6 +136,27 @@ void calculateTemperature(){
 
 
 
+}
+
+
+double bisectionMtd(problemData &data, double a, double b, const int index){
+
+	assert(a < b);
+	//assert(f1(data, a, index)*f1(data, b, index)<0);
+
+	double midpoint = (a + b)/2;
+
+	while(fabs(f1(data, midpoint, index))<TOL){
+
+		if(f1(data, midpoint, index) * f1(data, a, index)<0){
+			b = midpoint;
+		}
+		else if(f1(data, midpoint, index) * f1(data, b, index)<0){
+			a = midpoint;
+		}
+		midpoint = (a + b)/2;
+	}
+	return midpoint;
 }
 
 void printResults(problemData data, string a_file_name){
@@ -172,9 +198,6 @@ int main() {
 	for(int i=0; i < meshSize+1; ++i){
 		mesh[i] = start + dx*i;
 	}
-	assert(mesh[end] = 10);
-	cout << mesh[1355]<< endl;
-
 
 	vector<double> S = S1(mesh);
 	assert(fabs(S[meshSize]-1.5)<TOL);
@@ -184,13 +207,22 @@ int main() {
 	problemData data1(S, mesh, s_star, gamma, totalTemp, inletPressure, R, meshSize);
 	problemData* dataPtr = &data1;
 
-	double initial_guess = 0.2;
+	double initial_guess1 = 0.2;
+	double initial_guess2 = 0.1;
 
 	//loop through all points and generate the solution with 
 	for(int i = 0; i < meshSize+1; ++i){
 		cout << "Solving at: "<< i << endl;
-		solution[i] = newtonSolve1(data1, initial_guess, i);
-		//initial_guess = solution[i];
+
+		//uncomment below to solve with a newton method
+		solution[i] = newtonSolve1(data1, initial_guess1, i);
+		initial_guess1 = solution[i];
+
+		//uncomment below to produce the bisection method
+		//solution[i] = bisectionMtd(data1, initial_guess2, initial_guess1, i);
+		//initial_guess1 = initial_guess1 + (-0.35/5 * fabs(  data1.X[i]-5 ) +0.55 );
+		//initial_guess2 = initial_guess2 + (-0.35/5 * fabs(  data1.X[i]-5 ) +0.55 );
+		//
 	}
 
 	data1.M = solution;
