@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <cassert>
 
-#define TOL 1e-16
+#define TOL 1e-10
 
 using namespace std;
 
@@ -78,11 +78,16 @@ vector<double> S1(vector<double> x){
 double f1(problemData &data, double M, int index){
 	
 	//cout << "M in f:" << M << endl;
-	double inside = 2/(data.gamma + 1) * (1 + (data.gamma - 1)/2*pow(M,2));
-	double exponent = (data.gamma + 1)/(2*(data.gamma - 1));
-	double val = 1/M*pow(inside,exponent) - data.S[index]/data.S_star;
+	assert(fabs(data.gamma - 1.4)<TOL);
+	double a = 2/(data.gamma + 1);
+	double b = 1 + (data.gamma - 1)/2*pow(M,2);
+	double c = (data.gamma +1)/(2*(data.gamma -1));
+	//cout<< a<< " "<<b<<" "<< c-3<<endl;
+	assert(fabs(c - 3.)<TOL);
+	double inside = a * b;
+	assert(fabs(data.S_star - 0.8)<TOL);
+	double val = 1/M*pow(inside,c) - data.S[index]/data.S_star;
 	//cout << "f = " << val << "\n";
-
 	return val;
 
 }
@@ -101,14 +106,22 @@ double f1prime(problemData &data, double M, int index){
 double newtonSolve1(problemData &data, double guess, int index){
 //something is wrong here... seems like the solution it gives for every xval is too close. expecting a range 0.2-0.55
 //
-	double f = 0;
-	for(int i = 0; i<10; ++i){
-		cout << "Guess sent to f " << guess << " at position " << index <<  endl;
-		//data.M[index] = guess;
-		guess = guess - f1(data, guess, index)/f1prime(data, guess, index);
-		f = f1(data, guess, index);
-		cout << "value of f = " << f << endl;
-	}
+	double f = 1;
+//	while(!(fabs(f - 0)<TOL)){
+//		//cout << "Guess sent to f " << guess << " at position " << index <<  endl;
+//		//data.M[index] = guess;
+//		guess = guess - f1(data, guess, index)/f1prime(data, guess, index);
+//		f = f1(data, guess, index);
+//		//cout << "value of f = " << f << endl;
+//	}
+
+	for(int i = 0; i < 100; ++i){
+			//cout << "Guess sent to f " << guess << " at position " << index <<  endl;
+			//data.M[index] = guess;
+			guess = guess - f1(data, guess, index)/f1prime(data, guess, index);
+			f = f1(data, guess, index);
+			//cout << "value of f = " << f << endl;
+		}
 
 	return guess;
 
@@ -138,7 +151,7 @@ int main() {
 
 	//generate the x vector we will use for this problem
 
-	int meshSize = 5;
+	int meshSize = 3000;
 	double start = 0.;
 	double end = 10.;
 
@@ -160,6 +173,7 @@ int main() {
 		mesh[i] = start + dx*i;
 	}
 	assert(mesh[end] = 10);
+	cout << mesh[1355]<< endl;
 
 
 	vector<double> S = S1(mesh);
@@ -170,14 +184,13 @@ int main() {
 	problemData data1(S, mesh, s_star, gamma, totalTemp, inletPressure, R, meshSize);
 	problemData* dataPtr = &data1;
 
-	double initial_guess = 0.5;
+	double initial_guess = 0.2;
 
 	//loop through all points and generate the solution with 
 	for(int i = 0; i < meshSize+1; ++i){
-		cout << "M before: " << data1.M[i] << endl;
+		cout << "Solving at: "<< i << endl;
 		solution[i] = newtonSolve1(data1, initial_guess, i);
-		cout << "M after: " << data1.M[i] << "\n";
-		initial_guess = solution[i];
+		//initial_guess = solution[i];
 	}
 
 	data1.M = solution;
