@@ -132,7 +132,7 @@ int main() {
 	Quasi1DFlow problem1(mesh, R, gamma, totalTemp, inletPressure, s_star, meshSize, 0.2);
 
 	problem1.calculateMach();
-	problem1.printMachTempDensity("new solution.txt");
+	problem1.printMachTempDensityPressure("problem1");
 
 //	std::vector<double> S = S1(mesh);
 //	assert(fabs(S[meshSize]-1.5)<TOL);
