@@ -33,7 +33,6 @@ public:
 	void calculateDensity();
 	void calculateMach();
 	void calculatePressure();
-	double reCalculateValuesAfterShock(const int i);
 
 	void printMachTempDensityPressure(std::string a_file_name);
 
@@ -166,29 +165,8 @@ void Quasi1DFlow::calculatePhysicalQuantities(){
 	Quasi1DFlow::calculateDensity();
 }
 
-double Quasi1DFlow::reCalculateValuesAfterShock(const int i){
-//need to calculate new mach on right, pressure right, and pressure initial right
-
-//then, we need to calculate S^* using the equation
-//			Snew = Sold*A/B
-
-// where A = 
-
-	double G = std::pow(2/(gamma+1), (gamma + 1)/(2*(gamma-1)));
-	double M_2 = std::pow(M[i-1],2);
-	double M_r = std::sqrt((2 + (gamma-1)*M_2)/(2*gamma*M_2 - (gamma - 1)));
-	M[i] = M_r;
-
-	//double P_l = P_01*(1 + (gamma - 1)/2*M_2);
-	//double P_r = (2*gamma*M_2 - gamma + 1)/(gamma+1)*P_l;
-
-
-
-	return 0.0;
-}
-
 void Quasi1DFlow::printMachTempDensityPressure(std::string a_file_name){
-	Quasi1DFlow::calculatePhysicalQuantities();
+	//Quasi1DFlow::calculatePhysicalQuantities();
 
 	std::ofstream a_file;
 		a_file.open(a_file_name+ "_mach.csv", std::ios::out | std::ios::trunc);

@@ -8,7 +8,7 @@ B = csvread("problem1_pressure.csv");
 
 figure()
 plot(B(:,1), B(:,2));
-ylabel("pressure in kPa")
+ylabel("pressure in Pa")
 
 C = csvread("problem1_temp.csv");
 
@@ -20,4 +20,4 @@ D = csvread("problem1_density.csv");
 
 figure()
 plot(D(:,1), D(:,2));
-ylabel("density")
+ylabel("density (kg/m^3)")
