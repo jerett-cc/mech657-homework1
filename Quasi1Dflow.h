@@ -16,12 +16,14 @@
 class Quasi1DFlow {
 public:
 
-	double S_star, gamma, T_01, P_01, R, initial_mach_guess;
-	std::vector<double> M, S, X, Temperature, Pressure, Density;
-	int mesh_size;
+	double S_star, gamma, T_01, P_01, R, initial_mach_guess, shock_location;
 	double start = 0.;
 	double end = 10.;
-	void initializedata(std::vector<double> x, double R, double gamma, double totalTemp, double inletPressure, double s_star, int meshSize, double guessMach);
+	int mesh_size;
+	bool shock_present;
+	std::vector<double> M, S, X, Temperature, Pressure, Density;
+
+	
 	std::vector<double> channelWidthP1(std::vector<double> x);
 	double nonlinearFunctionToSolveP1(double M, const int i);
 	double nonlinearFunctionToSolveP1Deriv(double M, const int i);
@@ -31,27 +33,30 @@ public:
 	void calculateDensity();
 	void calculateMach();
 	void calculatePressure();
+	double reCalculateValuesAfterShock(const int i);
 
 	void printMachTempDensityPressure(std::string a_file_name);
 
-	Quasi1DFlow(std::vector<double> x, double r, double gamm, double totalTemp, double inletPressure, double s_star, int meshSize, double guessMach)
+	Quasi1DFlow(std::vector<double> x, double r, double gamm, double totalTemp, double inletPressure, double s_star, int meshSize, double guessMach, double s_loc, bool sp)
 		{
-				M=x;
-				S=Quasi1DFlow::channelWidthP1(x);
-				std::cout<<S.size()<<std::endl;
-				X=x;
-				R = r;
-				T_01 = totalTemp;
-				P_01 = inletPressure;
-				initial_mach_guess = guessMach;
-				gamma = gamm;
-				mesh_size = meshSize;
-				S_star = s_star;
-				Pressure = x;
-				Temperature = x;
-				Density = x;
+			//initialize all problem vectors to x, initialize s to shape function
+			M=x;
+			S=Quasi1DFlow::channelWidthP1(x);
+			X=x;
+			Pressure = x;
+			Temperature = x;
+			Density = x;
+			//initialize problem parameters
+			R = r;
+			T_01 = totalTemp;
+			P_01 = inletPressure;
+			initial_mach_guess = guessMach;
+			gamma = gamm;
+			mesh_size = meshSize;
+			S_star = s_star;
+			shock_location = s_loc;
+			shock_present = sp;
 		}
-
 };
 
 std::vector<double> Quasi1DFlow::channelWidthP1(std::vector<double> x){
@@ -99,13 +104,33 @@ double Quasi1DFlow::newtonSolveP1(double guess, const int index){
 void Quasi1DFlow::calculateMach(){
 	std::vector<double> solution(X.size());
 	double val = initial_mach_guess;
-	for (int i = 0; i < mesh_size+1; ++i)
+	
+	if(!shock_present)//subsonic and no shock, use initial mach guess for all newton solves
+	{
+		for (int i = 0; i < mesh_size+1; ++i)
 		{
-			solution[i] = Quasi1DFlow::newtonSolveP1(val, i);
+			//TODO make this chack more robust, maybe a flag? what if shock is outside of the region <0?
+			// if (X[i]<shock_location && initial_mach_guess<1)
+			// {
+			// 	val = 2; // before shock location we expect supersonic speed, so fix initial guess.
+			// }
+			M[i] = Quasi1DFlow::newtonSolveP1(val, i);
 		}
+	}
+	else if (shock_present)//transonic and shock, use an increasing initial guess, jumping back to subsonic after shock with RH conditions
+	{
+		for (int i = 0; i < mesh_size+1; ++i)
+		{
+			//as we approach mach 1, we expect to go faster, while a typical solve will decrease in speed.
+			if (X[i]>5)
+			{
+				val = 1.1; //use a supersonic guess to pass the 1 mach barrier.
+			}
 
-	M = solution;
-	assert(std::fabs(M[2]-solution[2])<TOL);
+			M[i] = Quasi1DFlow::newtonSolveP1(val, i);
+			val = M[i];
+		}
+	}
 }
 
 void Quasi1DFlow::calculateTemp(){
@@ -139,6 +164,27 @@ void Quasi1DFlow::calculatePhysicalQuantities(){
 	Quasi1DFlow::calculateTemp();
 	Quasi1DFlow::calculatePressure();
 	Quasi1DFlow::calculateDensity();
+}
+
+double Quasi1DFlow::reCalculateValuesAfterShock(const int i){
+//need to calculate new mach on right, pressure right, and pressure initial right
+
+//then, we need to calculate S^* using the equation
+//			Snew = Sold*A/B
+
+// where A = 
+
+	double G = std::pow(2/(gamma+1), (gamma + 1)/(2*(gamma-1)));
+	double M_2 = std::pow(M[i-1],2);
+	double M_r = std::sqrt((2 + (gamma-1)*M_2)/(2*gamma*M_2 - (gamma - 1)));
+	M[i] = M_r;
+
+	//double P_l = P_01*(1 + (gamma - 1)/2*M_2);
+	//double P_r = (2*gamma*M_2 - gamma + 1)/(gamma+1)*P_l;
+
+
+
+	return 0.0;
 }
 
 void Quasi1DFlow::printMachTempDensityPressure(std::string a_file_name){
