@@ -17,11 +17,8 @@
 #include <cassert>
 
 #include "Quasi1Dflow.h"
+#include "Quasi1DShockTube.h"
 
-
-void break_line(){
-	//pause
-}
 
 void recalculateAfterShock(const Quasi1DFlow &preShock){
 	double ML = preShock.M[preShock.mesh_size-1];
@@ -61,8 +58,6 @@ void recalculateAfterShock(const Quasi1DFlow &preShock){
 		problem2_aftershock.calculatePhysicalQuantities();
 		problem2_aftershock.printMachTempDensityPressure("problem2_after_shock");
 
-		//std::vector<double> M = problem2_preshock.M.push_back(problem2_aftershock.M);
-		//std::cout<< M.size<< std::endl;
 }
 
 int main() {
@@ -123,6 +118,33 @@ int main() {
 
 	}
 
+	//problem 3
+	{
+	int meshSize = 200;
+	double start = 0.;
+	double end = 7.;
+	double dx = (end-start)/meshSize;
+	std::vector<double> mesh(meshSize+1);
+	//fill the vector mesh with explicit points
+	for(int i=0; i < meshSize+1; ++i){
+		mesh[i] = start + dx*i;
+	}
+
+	double PL = 1e5;
+	double densityL = 1;
+	double PR = 1e4;
+	double densityR = 0.125;
+	double membraneLocation = 5.;
+	double gamma = 1.4;
+	double time = 6.1/1000.;
+
+	std::cout << PL << std::endl;
+	Quasi1DShockTube shockTube;
+
+		shockTube.runSolution(mesh, PL, densityL, PR, densityR, gamma, time, 1., membraneLocation);
+		shockTube.calculateMach();
+		shockTube.printMachTempDensityPressure("problem3");
+	}
 	
 	
 
