@@ -122,7 +122,7 @@ int main() {
 	{
 	int meshSize = 200;
 	double start = 0.;
-	double end = 7.;
+	double end = 10.;
 	double dx = (end-start)/meshSize;
 	std::vector<double> mesh(meshSize+1);
 	//fill the vector mesh with explicit points
@@ -138,10 +138,12 @@ int main() {
 	double gamma = 1.4;
 	double time = 6.1/1000.;
 
-	std::cout << PL << std::endl;
+	std::cout << "Starting pressure Left: " <<PL << std::endl;
 	Quasi1DShockTube shockTube;
 
 		shockTube.runSolution(mesh, PL, densityL, PR, densityR, gamma, time, 1., membraneLocation);
+		shockTube.calculatePressure();
+		shockTube.calculateDensity();
 		shockTube.calculateMach();
 		shockTube.printMachTempDensityPressure("problem3");
 	}
