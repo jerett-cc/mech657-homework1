@@ -24,7 +24,7 @@ void recalculateAfterShock(const Quasi1DFlow &preShock){
 	double ML = preShock.M[preShock.mesh_size-1];
 		double gamma = preShock.gamma;
 		double ML2 = std::pow(ML,2);
-	std::cout << ML2 << std::endl;
+//	std::cout << ML2 << std::endl;
 		double PL = preShock.Pressure[preShock.mesh_size-1];
 		double m_inside = (2+(gamma-1)*ML2)/(2*gamma*ML2 - (gamma -1));
 		double MR = std::sqrt(m_inside);
@@ -51,7 +51,7 @@ void recalculateAfterShock(const Quasi1DFlow &preShock){
 			mesh1[i] = start1 + dx1*i;
 		}
 
-		std::cout<< new_S_star<<std::endl;
+//		std::cout<< new_S_star<<std::endl;
 
 		Quasi1DFlow problem2_aftershock(mesh1, preShock.R, gamma, preShock.T_01 , new_inletPressure, new_S_star, meshSize1, 0.2, 11, 0);
 
@@ -120,7 +120,7 @@ int main() {
 
 	//problem 3
 	{
-	int meshSize = 200;
+	int meshSize = 2000;
 	double start = 0.;
 	double end = 10.;
 	double dx = (end-start)/meshSize;

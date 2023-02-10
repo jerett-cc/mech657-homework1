@@ -260,7 +260,7 @@ void Quasi1DShockTube::calculateDensity(){
 		else if (X[i]>=contact_position & X[i]<shock_position)
 		{
 			Density[i] = density_left_of_shock;
-			std::cout << "density left of shock "<<density_left_of_shock << std::endl;
+			// std::cout << "density left of shock "<<density_left_of_shock << std::endl;
 		}
 		else if (X[i]>shock_position)
 		{
@@ -305,45 +305,6 @@ void Quasi1DShockTube::calculatePressure(){
 void Quasi1DShockTube::calculateTemperature(){
  std::cout << "INCOMPLETE" << std::endl;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void Quasi1DShockTube::runSolution(std::vector<double>&x, double PL, double densityL, double PR, double densityR, double gamma, double time, double initialP_guess, double x0){
 
@@ -403,14 +364,14 @@ void Quasi1DShockTube::printMachTempDensityPressure(std::string a_file_name){
 			}
 			a_file2.close();
 
-	// std::ofstream a_file3;
-	// 	a_file3.open(a_file_name+ "_pressure.csv", std::ios::out | std::ios::trunc);
+	 std::ofstream a_file3;
+	 	a_file3.open(a_file_name+ "_pressure.csv", std::ios::out | std::ios::trunc);
 
-	// 		for (unsigned int i = 0; i< X.size(); ++i)
-	// 		{
-	// 			a_file3 <<  " " << X[i]  << ", " << std::to_string(Pressure[i]) << std::endl;
-	// 		}
-	// 		a_file3.close();
+	 		for (unsigned int i = 0; i< X.size(); ++i)
+	 		{
+	 			a_file3 <<  " " << X[i]  << ", " << std::to_string(Pressure[i]) << std::endl;
+	 		}
+	 		a_file3.close();
 
 }
 
